@@ -1,0 +1,269 @@
+.auth-suppliers-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  color: #263238;
+}
+
+.auth-suppliers-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.auth-suppliers-heading h2 {
+  margin: 0 0 6px;
+  font-size: 24px;
+}
+
+.auth-suppliers-heading p {
+  margin: 0;
+  color: #718096;
+  font-size: 14px;
+}
+
+.auth-suppliers-badge {
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #fff4df;
+  color: #946200;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+}
+
+.auth-suppliers-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid #f1dfb5;
+  border-radius: 12px;
+  background: #fffbf1;
+  color: #8b6416;
+}
+
+.auth-suppliers-notice > svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.auth-suppliers-notice strong {
+  display: block;
+  margin-bottom: 5px;
+}
+
+.auth-suppliers-notice p {
+  margin: 0;
+  color: #806b42;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.auth-suppliers-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.auth-supplier-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 20px;
+  border: 1px solid #e8edf0;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.auth-supplier-card > svg {
+  color: #23856d;
+}
+
+.auth-supplier-card span {
+  color: #718096;
+  font-size: 13px;
+}
+
+.auth-supplier-card h3 {
+  margin: 0;
+  font-size: 25px;
+}
+
+.auth-suppliers-section {
+  overflow: hidden;
+  border: 1px solid #e8edf0;
+  border-radius: 12px;
+  background: #fff;
+}
+
+.auth-suppliers-section-heading {
+  padding: 20px;
+}
+
+.auth-suppliers-section-heading h3 {
+  margin: 0 0 6px;
+  font-size: 17px;
+}
+
+.auth-suppliers-section-heading p {
+  margin: 0;
+  color: #718096;
+  font-size: 13px;
+}
+
+.auth-suppliers-filters {
+  display: flex;
+  gap: 12px;
+  padding: 0 20px 18px;
+}
+
+.auth-suppliers-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+  padding: 0 12px;
+  border: 1px solid #dfe6e9;
+  border-radius: 8px;
+  color: #718096;
+}
+
+.auth-suppliers-search input {
+  width: 100%;
+  min-width: 0;
+  padding: 11px 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  font: inherit;
+}
+
+.auth-suppliers-filters select {
+  min-width: 170px;
+  padding: 10px 12px;
+  border: 1px solid #dfe6e9;
+  border-radius: 8px;
+  background: #fff;
+  color: #263238;
+}
+
+.auth-suppliers-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.auth-suppliers-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.auth-suppliers-table th {
+  padding: 14px 16px;
+  background: #f7f9fa;
+  color: #718096;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.auth-suppliers-table td {
+  padding: 16px;
+  border-top: 1px solid #edf0f2;
+  font-size: 13px;
+}
+
+.auth-suppliers-table td strong {
+  font-weight: 600;
+}
+
+.auth-suppliers-table td small {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  color: #84919b;
+}
+
+.auth-supplier-delivery,
+.auth-supplier-contact {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.auth-supplier-contact {
+  color: #21836b;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.auth-supplier-contact:hover {
+  text-decoration: underline;
+}
+
+.auth-suppliers-empty {
+  padding: 32px !important;
+  color: #84919b;
+  text-align: center;
+}
+
+.auth-suppliers-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 180px;
+  padding: 24px;
+  color: #718096;
+  font-size: 14px;
+  text-align: center;
+}
+
+.auth-suppliers-error {
+  gap: 12px;
+  color: #b42318;
+}
+
+.auth-suppliers-error p {
+  margin: 6px 0 0;
+  color: #718096;
+  font-size: 13px;
+}
+
+@media (max-width: 768px) {
+  .auth-suppliers-summary {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-suppliers-filters {
+    flex-direction: column;
+  }
+
+  .auth-suppliers-filters select {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .auth-suppliers-heading h2 {
+    font-size: 21px;
+  }
+
+  .auth-suppliers-notice {
+    padding: 12px;
+  }
+
+  .auth-suppliers-section-heading {
+    padding: 16px;
+  }
+
+  .auth-suppliers-filters {
+    padding: 0 16px 16px;
+  }
+}
