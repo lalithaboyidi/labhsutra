@@ -1,3 +1,4 @@
+
 import { useState, type FormEvent } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import {
@@ -11,7 +12,7 @@ import {
   EyeOff,
   ShieldCheck,
 } from "lucide-react";
-import { supabase } from "../lib/supabase";
+import { signIn, signUp } from "../lib/auth";
 import "./AuthPage.css";
 
 function AuthPage() {
@@ -27,54 +28,41 @@ function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [authError, setAuthError] = useState("");
+  const [authMessage, setAuthMessage] = useState("");
 
-  const handleSubmit = async (
-    event: FormEvent<HTMLFormElement>
-  ) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (loading) return;
 
     setLoading(true);
+    setAuthError("");
+    setAuthMessage("");
 
     try {
       if (isSignup) {
-        const { data, error } = await supabase.auth.signUp({
-          email: email.trim(),
+        const result = await signUp({
+          fullName: name,
+          shopName,
+          phone,
+          email,
           password,
-          options: {
-            data: {
-              full_name: name.trim(),
-              shop_name: shopName.trim(),
-              phone: phone.trim(),
-            },
-          },
         });
 
-        if (error) throw error;
-
-        if (!data.session) {
-          alert(
-            "Your account has been created. Please verify your email before logging in."
+        if (!result.session) {
+          setAuthMessage(
+            "Account created! Please check your email to confirm your account, then log in."
           );
-          navigate("/login");
           return;
         }
-
-        navigate("/app");
       } else {
-        const { error } =
-          await supabase.auth.signInWithPassword({
-            email: email.trim(),
-            password,
-          });
-
-        if (error) throw error;
-
-        navigate("/app");
+        await signIn(email, password);
       }
+
+      navigate("/app", { replace: true });
     } catch (error) {
-      alert(
+      setAuthError(
         error instanceof Error
           ? error.message
           : "Authentication failed. Please try again."
@@ -132,11 +120,18 @@ function AuthPage() {
 
         <div className="auth-form-container">
           <div className="auth-form-heading">
-            <h2>{isSignup ? "Create your account" : "Welcome back"}</h2>
+            <span className="auth-eyebrow">
+              {isSignup ? "GET STARTED" : "WELCOME BACK"}
+            </span>
+
+            <h2>
+              {isSignup ? "Create your account" : "Welcome back"}
+            </h2>
+
             <p>
               {isSignup
-                ? "Start managing your shop with LabhSutra."
-                : "Log in to your LabhSutra workspace."}
+                ? "Set up your shop workspace with LabhSutra."
+                : "Log in to manage your shop."}
             </p>
           </div>
 
@@ -151,9 +146,7 @@ function AuthPage() {
                       type="text"
                       placeholder="Enter your full name"
                       value={name}
-                      onChange={(event) =>
-                        setName(event.target.value)
-                      }
+                      onChange={(event) => setName(event.target.value)}
                       required
                     />
                   </div>
@@ -167,9 +160,7 @@ function AuthPage() {
                       type="text"
                       placeholder="Enter your shop name"
                       value={shopName}
-                      onChange={(event) =>
-                        setShopName(event.target.value)
-                      }
+                      onChange={(event) => setShopName(event.target.value)}
                       required
                     />
                   </div>
@@ -183,9 +174,7 @@ function AuthPage() {
                       type="tel"
                       placeholder="10-digit mobile number"
                       value={phone}
-                      onChange={(event) =>
-                        setPhone(event.target.value)
-                      }
+                      onChange={(event) => setPhone(event.target.value)}
                       pattern="[0-9]{10}"
                       maxLength={10}
                       required
@@ -203,9 +192,7 @@ function AuthPage() {
                   type="email"
                   placeholder="you@example.com"
                   value={email}
-                  onChange={(event) =>
-                    setEmail(event.target.value)
-                  }
+                  onChange={(event) => setEmail(event.target.value)}
                   required
                 />
               </div>
@@ -219,9 +206,7 @@ function AuthPage() {
                   type={showPassword ? "text" : "password"}
                   placeholder="Enter your password"
                   value={password}
-                  onChange={(event) =>
-                    setPassword(event.target.value)
-                  }
+                  onChange={(event) => setPassword(event.target.value)}
                   minLength={6}
                   required
                 />
@@ -229,9 +214,7 @@ function AuthPage() {
                 <button
                   type="button"
                   className="auth-eye"
-                  onClick={() =>
-                    setShowPassword(!showPassword)
-                  }
+                  onClick={() => setShowPassword(!showPassword)}
                   aria-label={
                     showPassword ? "Hide password" : "Show password"
                   }
@@ -245,6 +228,26 @@ function AuthPage() {
               </div>
             </label>
 
+            {authError && (
+              <p
+                className="auth-error"
+                role="alert"
+                style={{ color: "#dc2626", fontSize: "14px" }}
+              >
+                {authError}
+              </p>
+            )}
+
+            {authMessage && (
+              <p
+                className="auth-success"
+                role="status"
+                style={{ color: "#15803d", fontSize: "14px" }}
+              >
+                {authMessage}
+              </p>
+            )}
+
             <button
               type="submit"
               className="auth-submit"
@@ -255,6 +258,7 @@ function AuthPage() {
                 : isSignup
                   ? "Create Account"
                   : "Log In"}
+
               {!loading && <ArrowRight size={17} />}
             </button>
           </form>
@@ -281,8 +285,8 @@ function AuthPage() {
           </div>
 
           <p className="auth-note">
-            Your account and shop information are securely
-            managed through Supabase.
+            Your account and shop information are securely managed through
+            Supabase.
           </p>
         </div>
       </div>

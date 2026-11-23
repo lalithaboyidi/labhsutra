@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from "react";
 import {
   LayoutDashboard,
@@ -11,6 +12,7 @@ import {
   X,
   LogOut,
 } from "lucide-react";
+
 import {
   Routes,
   Route,
@@ -30,10 +32,17 @@ import StockWatch from "./pages/StockWatch";
 import DemoSuppliersPrices from "./pages/SuppliersPrices";
 import DemoPurchasePlanner from "./pages/PurchasePlanner";
 
+import AuthenticatedCustomerLedger from "./pages/authenticated/CustomerLedger";
+import AuthenticatedStockWatch from "./pages/authenticated/StockWatch";
 import SuppliersPrices from "./pages/authenticated/SuppliersPrices";
 import PurchasePlanner from "./pages/authenticated/PurchasePlanner";
 
-import { supabase } from "./lib/supabase";
+import {
+  getCurrentSession,
+  onAuthStateChange,
+  signOut,
+} from "./lib/auth";
+
 import "./App.css";
 
 const demoNavigation = [
@@ -45,6 +54,8 @@ const demoNavigation = [
 ];
 
 const appNavigation = [
+  { label: "Customer Ledger", path: "/app/ledger", icon: Users },
+  { label: "Stock Watch", path: "/app/stock", icon: Package },
   { label: "Suppliers & Prices", path: "/app/suppliers", icon: Truck },
   { label: "Purchase Planner", path: "/app/planner", icon: ClipboardList },
 ];
@@ -66,7 +77,11 @@ function Workspace() {
             <h2>LabhSutra</h2>
             <span>SMART KIRANA MANAGEMENT</span>
           </div>
-          <button className="close-menu" onClick={() => setMenuOpen(false)} aria-label="Close menu">
+          <button
+            className="close-menu"
+            onClick={() => setMenuOpen(false)}
+            aria-label="Close menu"
+          >
             <X size={20} />
           </button>
         </div>
@@ -89,7 +104,9 @@ function Workspace() {
                 key={item.path}
                 to={item.path}
                 end={item.path === "/demo"}
-                className={({ isActive }) => `nav-item ${isActive ? "active" : ""}`}
+                className={({ isActive }) =>
+                  `nav-item ${isActive ? "active" : ""}`
+                }
                 onClick={() => setMenuOpen(false)}
               >
                 <Icon size={19} />
@@ -109,13 +126,21 @@ function Workspace() {
       </aside>
 
       {menuOpen && (
-        <button className="mobile-overlay" onClick={() => setMenuOpen(false)} aria-label="Close navigation" />
+        <button
+          className="mobile-overlay"
+          onClick={() => setMenuOpen(false)}
+          aria-label="Close navigation"
+        />
       )}
 
       <main className="main-content">
         <header className="topbar">
           <div className="topbar-left">
-            <button className="menu-button" onClick={() => setMenuOpen(true)} aria-label="Open menu">
+            <button
+              className="menu-button"
+              onClick={() => setMenuOpen(true)}
+              aria-label="Open menu"
+            >
               <Menu size={22} />
             </button>
             <div>
@@ -123,8 +148,11 @@ function Workspace() {
               <h1>{activePage}</h1>
             </div>
           </div>
+
           <div className="topbar-actions">
-            <button className="search-button" aria-label="Search"><Search size={19} /></button>
+            <button className="search-button" aria-label="Search">
+              <Search size={19} />
+            </button>
             <button className="notification-button" aria-label="Notifications">
               <Bell size={19} />
               <span />
@@ -132,86 +160,83 @@ function Workspace() {
             <div className="profile-avatar">L</div>
           </div>
         </header>
-        <div className="page-content"><Outlet /></div>
+
+        <div className="page-content">
+          <Outlet />
+        </div>
       </main>
     </div>
   );
 }
 
-function ProtectedRoute() {
-  const [session, setSession] = useState<any>(null);
+function ProtectedWorkspace() {
+  const [session, setSession] = useState<
+    Awaited<ReturnType<typeof getCurrentSession>>
+  >(null);
+
   const [loading, setLoading] = useState(true);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    let mounted = true;
-
-    supabase.auth.getSession().then(({ data, error }) => {
-      if (!mounted) return;
-      setSession(error ? null : data.session);
-      setLoading(false);
-    });
+    let active = true;
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, newSession) => {
-      if (mounted) {
-        setSession(newSession);
+    } = onAuthStateChange((nextSession) => {
+      if (active) {
+        setSession(nextSession);
         setLoading(false);
       }
     });
 
+    getCurrentSession()
+      .then((currentSession) => {
+        if (active) {
+          setSession(currentSession);
+          setLoading(false);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setSession(null);
+          setLoading(false);
+        }
+      });
+
     return () => {
-      mounted = false;
+      active = false;
       subscription.unsubscribe();
     };
   }, []);
 
   if (loading) {
-    return <div style={{ padding: "40px" }}>Checking your session...</div>;
+    return (
+      <div className="app-container">
+        <main className="main-content">
+          <div className="page-content">
+            <p>Checking your account...</p>
+          </div>
+        </main>
+      </div>
+    );
   }
 
   if (!session) {
     return <Navigate to="/login" replace />;
   }
 
-  return <Outlet />;
-}
+  const user = session.user;
 
-function AuthenticatedWorkspace() {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [signingOut, setSigningOut] = useState(false);
-  const [shopName, setShopName] = useState("My Shop");
-  const [fullName, setFullName] = useState("Shop Owner");
+  const shopName = String(
+    user.user_metadata?.shop_name ?? "My Shop"
+  );
 
-  const location = useLocation();
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    let mounted = true;
-
-    const loadUserDetails = async () => {
-      const { data: { user }, error } = await supabase.auth.getUser();
-
-      if (!mounted || error || !user) return;
-
-      const registeredShopName = String(
-        user.user_metadata?.shop_name ?? "My Shop"
-      );
-
-      const registeredFullName = String(
-        user.user_metadata?.full_name ?? "Shop Owner"
-      );
-
-      setShopName(registeredShopName);
-      setFullName(registeredFullName);
-    };
-
-    void loadUserDetails();
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
+  const fullName = String(
+    user.user_metadata?.full_name ?? "Shop Owner"
+  );
 
   const initials =
     shopName
@@ -226,17 +251,17 @@ function AuthenticatedWorkspace() {
     appNavigation.find((item) => item.path === location.pathname)?.label ??
     "Workspace";
 
-  const handleLogout = async () => {
-    setSigningOut(true);
-    const { error } = await supabase.auth.signOut();
-
-    if (error) {
-      alert(error.message);
-      setSigningOut(false);
-      return;
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      navigate("/login", { replace: true });
+    } catch (error) {
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Unable to sign out. Please try again."
+      );
     }
-
-    navigate("/login", { replace: true });
   };
 
   return (
@@ -248,7 +273,11 @@ function AuthenticatedWorkspace() {
             <h2>LabhSutra</h2>
             <span>SMART KIRANA MANAGEMENT</span>
           </div>
-          <button className="close-menu" onClick={() => setMenuOpen(false)} aria-label="Close menu">
+          <button
+            className="close-menu"
+            onClick={() => setMenuOpen(false)}
+            aria-label="Close menu"
+          >
             <X size={20} />
           </button>
         </div>
@@ -266,11 +295,15 @@ function AuthenticatedWorkspace() {
         <nav className="navigation">
           {appNavigation.map((item) => {
             const Icon = item.icon;
+
             return (
               <NavLink
                 key={item.path}
                 to={item.path}
-                className={({ isActive }) => `nav-item ${isActive ? "active" : ""}`}
+                end
+                className={({ isActive }) =>
+                  `nav-item ${isActive ? "active" : ""}`
+                }
                 onClick={() => setMenuOpen(false)}
               >
                 <Icon size={19} />
@@ -282,37 +315,54 @@ function AuthenticatedWorkspace() {
 
         <div className="sidebar-bottom">
           <div className="help-card">
-            <strong>Grow your business</strong>
-            <p>Make smarter decisions with LabhSutra.</p>
+            <strong>Your business. Your records.</strong>
+            <p>Your authenticated LabhSutra workspace.</p>
           </div>
-          <button className="nav-item" onClick={handleLogout} disabled={signingOut}>
+
+          <button className="nav-item" onClick={handleSignOut}>
             <LogOut size={19} />
-            <span>{signingOut ? "Signing out..." : "Logout"}</span>
+            <span>Sign Out</span>
           </button>
+
           <div className="sidebar-footer">LabhSutra © 2026</div>
         </div>
       </aside>
 
       {menuOpen && (
-        <button className="mobile-overlay" onClick={() => setMenuOpen(false)} aria-label="Close navigation" />
+        <button
+          className="mobile-overlay"
+          onClick={() => setMenuOpen(false)}
+          aria-label="Close navigation"
+        />
       )}
 
       <main className="main-content">
         <header className="topbar">
           <div className="topbar-left">
-            <button className="menu-button" onClick={() => setMenuOpen(true)} aria-label="Open menu">
+            <button
+              className="menu-button"
+              onClick={() => setMenuOpen(true)}
+              aria-label="Open menu"
+            >
               <Menu size={22} />
             </button>
+
             <div>
-              <p className="breadcrumb">My Workspace / {activePage}</p>
+              <p className="breadcrumb">
+                My Workspace / {activePage}
+              </p>
               <h1>{activePage}</h1>
             </div>
           </div>
+
           <div className="topbar-actions">
-            <div className="profile-avatar">{initials}</div>
+            <div className="profile-avatar">{initials.charAt(0)}</div>
           </div>
         </header>
-        <div className="page-content"><Outlet /></div>
+
+        <div className="page-content">
+          <Outlet />
+        </div>
       </main>
     </div>
   );
@@ -322,9 +372,11 @@ function App() {
   return (
     <Routes>
       <Route path="/" element={<LandingPage />} />
+
       <Route path="/login" element={<AuthPage />} />
       <Route path="/signup" element={<AuthPage />} />
 
+      {/* Existing demo workspace */}
       <Route path="/demo" element={<Workspace />}>
         <Route index element={<Dashboard />} />
         <Route path="ledger" element={<CustomerLedger />} />
@@ -333,15 +385,31 @@ function App() {
         <Route path="planner" element={<DemoPurchasePlanner />} />
       </Route>
 
-      <Route path="/app" element={<ProtectedRoute />}>
-        <Route element={<AuthenticatedWorkspace />}>
-          <Route index element={<Navigate to="suppliers" replace />} />
-          <Route path="suppliers" element={<SuppliersPrices />} />
-          <Route path="planner" element={<PurchasePlanner />} />
-        </Route>
+      {/* Single authenticated workspace for all four modules */}
+      <Route path="/app" element={<ProtectedWorkspace />}>
+        <Route index element={<Navigate to="ledger" replace />} />
+        <Route
+          path="ledger"
+          element={<AuthenticatedCustomerLedger />}
+        />
+        <Route
+          path="stock"
+          element={<AuthenticatedStockWatch />}
+        />
+        <Route
+          path="suppliers"
+          element={<SuppliersPrices />}
+        />
+        <Route
+          path="planner"
+          element={<PurchasePlanner />}
+        />
       </Route>
 
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route
+        path="*"
+        element={<Navigate to="/" replace />}
+      />
     </Routes>
   );
 }
